@@ -1,18 +1,21 @@
-// @ts-nocheck
 import React from 'react'
 import { Box, InputAdornment, TextField } from '@mui/material'
-import Search from '@mui/icons-material/Search';
+import Search from '@mui/icons-material/Search'
 
-export const SearchBar = ({onSort, startSearchNumber, searchCounter}: any) => {
-    const [innerValue, setInnerValue] = React.useState([])
+export interface SearchBarProps {
+    onSort: (innerValue: string) => void
+    startSearchNumber: number
+    searchCounter: number
+}
+export const SearchBar = ({onSort, startSearchNumber, searchCounter}: SearchBarProps) => {
 
-    React.useEffect(() => {
-            if(innerValue.length > startSearchNumber){
-                onSort(innerValue)
-            } else {
-                onSort('')
-            }},
-        [innerValue])
+    const handleChangeValue = (value:string) => {
+        if (value.length > startSearchNumber) {
+            onSort(value)
+        } else {
+            onSort('')
+        }
+    }
 
     return (
         <Box
@@ -27,8 +30,7 @@ export const SearchBar = ({onSort, startSearchNumber, searchCounter}: any) => {
                 variant="outlined"
                 label="Search"
                 size="small"
-                value={innerValue}
-                onChange={(e) => setInnerValue(e.target.value)}
+                onChange={(e) => {handleChangeValue(e.target.value)}}
                 InputProps={{
                     startAdornment: (
                         <InputAdornment position="start">
@@ -42,7 +44,7 @@ export const SearchBar = ({onSort, startSearchNumber, searchCounter}: any) => {
                 variant="outlined"
                 label="Found"
                 size="small"
-                readOnly
+                disabled
                 value={searchCounter}
             />
         </Box>

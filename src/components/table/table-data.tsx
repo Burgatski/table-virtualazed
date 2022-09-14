@@ -1,35 +1,23 @@
-import React from "react";
-import Highlighter from "react-highlight-words";
-import {Column, TableHeaderProps, TableCellRenderer} from "react-virtualized";
-import styled from "styled-components";
-import {faker} from '@faker-js/faker';
-import {TableContainer} from '@mui/material';
-import MuiTableCell from '@mui/material/TableCell';
-import {TableView} from "./table-view";
-import {SearchBar} from "../search";
+import React from "react"
+import Highlighter from "react-highlight-words"
+import {useDispatch, useSelector} from "react-redux"
+import {Column, TableHeaderProps, TableCellRenderer} from "react-virtualized"
+import styled from "styled-components"
+import {TableContainer, CircularProgress} from '@mui/material'
+import MuiTableCell from '@mui/material/TableCell'
+import {TableView} from "./table-view"
+import {SearchBar} from "../search"
+import {fetchData, fetchFilterData} from "../../store/data-actions"
 import 'react-virtualized/styles.css'
+import {ApplicationState} from "../../store/data-reducer"
 
-const Wrapper = styled.div`
-  margin: 10px;
+const Loader = styled.div`
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100vw;
+    height: 100vh;
 `
-
-const generateRandomItem = () => ({
-    name: faker.name.firstName(),
-    lastName: faker.name.lastName(),
-    phone: faker.phone.number(),
-    email: faker.internet.email()
-})
-
-const getRows = (num: number) => {
-    let items = []
-    for (let i = 0, l = num; i < l; i++) {
-        items.push(generateRandomItem())
-    }
-    return items
-}
-
-const count = 10000
-const rows = getRows(count)
 
 const TableCell = ({children}: { [key: string]: React.ReactNode }) => (
     <MuiTableCell
@@ -48,38 +36,42 @@ const TableCell = ({children}: { [key: string]: React.ReactNode }) => (
 )
 
 export const Table = () => {
-    const [selectedKeys, setSelectedKeys] = React.useState<any[]>([])
-    const [data,] = React.useState(rows)
-    const [sortedList, setSortedList] = React.useState(rows)
-    const [loading, setLoading] = React.useState(true)
+    const dispatch = useDispatch()
+    const rowData = useSelector<{dataReducer: ApplicationState}>((state) => state.dataReducer.tableData)
+    const isLoadingData = useSelector<{dataReducer: ApplicationState}>((state) => state.dataReducer.isInitialization)
+    const isFilterLoading = useSelector<{dataReducer: ApplicationState}>((state) => state.dataReducer.isFilterLoading)
+
+    const [selectedKeys, setSelectedKeys] = React.useState<string[]>([])
+    const [list, setList] = React.useState<{[key: string]:string|number}[]|any>([])
+
+    React.useEffect(() => {
+         dispatch(fetchData())
+    }, [dispatch])
+
+    React.useEffect(() => {
+        setList(rowData)
+    }, [rowData, isLoadingData])
 
     const tableCellRenderer: TableCellRenderer = ({cellData}) => {
         return (
             <TableCell>
                 <Highlighter
-                    highlightStyle={{backgroundColor: "#ffc069", padding: 0}}
+                    highlightStyle={{backgroundColor: "#f3ff69", padding: 0}}
                     searchWords={selectedKeys}
                     autoEscape
                     textToHighlight={cellData}
                 />
             </TableCell>
-        );
-    };
-
-    const onSort = (value: string) => {
-        if (value !== '') {
-            setLoading(false)
-            const result = data.filter(({name, lastName}) => {
-                return name.startsWith(value) || lastName.startsWith(value)
-            })
-            setTimeout(() => {
-                setSortedList(result)
-                setLoading(true)
-            }, 1000)
-        } else {
-            setSortedList(data)
-        }
+        )
     }
+
+    const onSort = React.useCallback((value: string) => {
+        if (value !== '') {
+            dispatch(fetchFilterData(value))
+        } else {
+            dispatch(fetchData())
+        }
+    },[dispatch])
 
     const headerRenderer = ({label}: TableHeaderProps) => <TableCell>{label}</TableCell>
 
@@ -89,8 +81,8 @@ export const Table = () => {
             alignItems: 'center',
             boxSizing: 'border-box',
             boxShadow: 'none'
-        };
-    };
+        }
+    }
 
     const columns = [
         {
@@ -115,8 +107,8 @@ export const Table = () => {
             label: 'Email',
             width: 300
         }
-    ];
-
+    ]
+    console.log('isFilterLoading')
     return (
         <TableContainer>
             <SearchBar
@@ -125,14 +117,16 @@ export const Table = () => {
                     onSort(searchValue)
                 }}
                 startSearchNumber={2}
-                searchCounter={sortedList.length}
+                searchCounter={list.length}
             />
-            {loading &&
+            {(!isLoadingData || isFilterLoading) ? <Loader>
+                    <CircularProgress/>
+                </Loader> :
             <TableView
                 rowHeight={40}
                 headerHeight={50}
-                rowCount={sortedList.length}
-                rowGetter={({index}: any) => sortedList[index]}
+                rowCount={list.length}
+                rowGetter={({index}: any) => list[index]}
                 rowStyle={getRowStyles}
             >
                 {columns.map(({dataKey, cellRenderer, ...other}) => {

@@ -1,5 +1,5 @@
-import React from "react";
-import {AutoSizer, Index, Table, WindowScroller} from "react-virtualized";
+import React from "react"
+import {AutoSizer, Index, Table, WindowScroller} from "react-virtualized"
 
 export interface TableViewProps {
     children: JSX.Element|JSX.Element[]
